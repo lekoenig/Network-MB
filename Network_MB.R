@@ -7,6 +7,8 @@ library(nhdplusTools)  # R package for interafacing with NHDPlus
 library(dataRetrieval) # R package for interfacing with NWIS data
 library(sf)            # spatial analysis
 
+source("./R/Network_MB_Analysis_Functions.R")
+
 
 ## ---------- Sample an NHD network to use as a heuristic river network structure ---------- ##
 
@@ -72,17 +74,6 @@ library(sf)            # spatial analysis
                          width = (a*(q0001e*0.0283168)^b),
                          depth = (c*(q0001e*0.0283168)^d))
 
-  # Function to find the X,Y coordinates of the center point of each NHD flowline:
-  get_coords_reach_mid <- function(x){
-    # Project to albers equal area and get coordinates for the center point along the flowline:
-    fline <- x %>% st_transform(5070)
-    mid <- suppressWarnings(st_centroid(fline) %>% st_transform(4269))   
-    X <- st_coordinates(mid)[,1]
-    Y <- st_coordinates(mid)[,2]
-    out <- data.frame(X=X,Y=Y)
-    return(out)
-  }
-
   # For each reach, find the downstream COMID and lat/lon of the flowline centroid (i.e., the middle of each respective NHD reach):
   for(i in 1:length(flowline.sub$comid)){
     tocomid <- flowline.sub$comid[which(flowline.sub$fromnode==flowline.sub$tonode[i])]
@@ -95,8 +86,8 @@ library(sf)            # spatial analysis
 
   # Create nodes and links objects and define igraph object:
   nodes <- data.frame(flowline.sub$comid,flowline.sub$X_centroid,flowline.sub$Y_centroid,flowline.sub$lengthkm,flowline.sub$areasqkm,flowline.sub$totdasqkm,
-                      flowline.sub$streamorde,flowline.sub$local_C_in,flowline.sub$runoff_mday)
-  names(nodes) <- c("comid","x","y","lengthkm","areasqkm","totdasqkm","streamorder","local_C_in","runoff_mday")
+                      flowline.sub$streamorde,flowline.sub$local_C_in,flowline.sub$runoff_mday,flowline.sub$width,flowline.sub$depth)
+  names(nodes) <- c("comid","x","y","lengthkm","areasqkm","totdasqkm","streamorder","local_C_in","runoff_mday","width","depth")
   
   links <- flowline.sub[-which(is.na(flowline.sub$tocomid)),c("comid","tocomid")]  # remove network outlet from links (tocomid is empty)
   
@@ -111,12 +102,6 @@ library(sf)            # spatial analysis
   
 ## ---------- Apply mass balance model to all reaches within the network ---------- ##
   
-  # Note that we are interested in the mass of carbon in the reach
-  V(net)$Qlocal <- NA
-  V(net)$Clocal <- NA
-  V(net)$qCNet <- NA
-  V(net)$up.all <- NA
-
   # How many upstream reaches flow into each reach?
   for(i in 1:length(V(net))){
     up.all <- ego(net,order=length(V(net)),nodes=V(net)[i],mode=c("in"),mindist=0)
@@ -130,4 +115,12 @@ library(sf)            # spatial analysis
   # Visually check new network graph: 
   plot(net2,vertex.label=NA,vertex.shape='circle',vertex.size=5,edge.width=1,edge.arrow.size=0.4,edge.color="darkgray")
   
+  # Run the mass-balance model:
+  net2.mod <- solveMB(net2)
+  print(net2.mod$Prop_C_lost)
   
+
+        
+    
+    
+    
