@@ -35,8 +35,8 @@
       V(network)$Cnet <- 0
       # Exported C load from each reach (g d-1):
       V(network)$Cout <- NA
-      # Uptake/decay rate (m day-1):
-      V(network)$vf <- 0
+      # Uptake/decay rate (m day-1) - change vf within analysis file:
+      #V(network)$vf <- 0
       # Fraction of C load lost during transport within each reach (unitless):
       V(network)$Clost <- NA
       
@@ -60,7 +60,7 @@
         V(network)$Qout[i] <- V(network)$Qlocal[i] + V(network)$Qnet[i]
         
         # Calculate reach hydraulic load (m d-1):
-        HL <- V(network)$Qout[i]/(V(network)$width[i]*(V(network)$lengthkm[i]/1000))
+        HL <- V(network)$Qout[i]/(V(network)$width[i]*(V(network)$lengthkm[i]*1000))
         
         # Define carbon inflows/outflows for each reach (g d-1)
         # Carbon inflow from local catchment (g d-1):
@@ -72,7 +72,7 @@
         } 
         
         # Exported carbon load to downstream reach (g d-1):
-        V(network)$Cout[i] <- V(network)$Clocal[i] + V(network)$Cnet[i] - ((V(network)$Clocal[i] + V(network)$Cnet[i])*(1-exp(V(network)$vf[i]/HL)))
+        V(network)$Cout[i] <- V(network)$Clocal[i] + V(network)$Cnet[i] - ((V(network)$Clocal[i] + V(network)$Cnet[i])*(1-exp(-V(network)$vf[i]/HL)))
         
         # Calculate fraction C lost
         V(network)$Clost[i] <- 1-(V(network)$Cout[i]/(V(network)$Clocal[i] + V(network)$Cnet[i]))

@@ -69,7 +69,9 @@ source("./R/Network_MB_Analysis_Functions.R")
                          tocomid = NA,
                          X_centroid = NA,
                          Y_centroid = NA,
-                         local_C_in = 10,
+                         local_C_in = 5,
+                         # Uptake/decay rate (m day-1):
+                         vf = 0.29,
                          runoff_mday = (q0001e*0.0283168*86400)/(totdasqkm*10^6),
                          width = (a*(q0001e*0.0283168)^b),
                          depth = (c*(q0001e*0.0283168)^d))
@@ -86,8 +88,8 @@ source("./R/Network_MB_Analysis_Functions.R")
 
   # Create nodes and links objects and define igraph object:
   nodes <- data.frame(flowline.sub$comid,flowline.sub$X_centroid,flowline.sub$Y_centroid,flowline.sub$lengthkm,flowline.sub$areasqkm,flowline.sub$totdasqkm,
-                      flowline.sub$streamorde,flowline.sub$local_C_in,flowline.sub$runoff_mday,flowline.sub$width,flowline.sub$depth)
-  names(nodes) <- c("comid","x","y","lengthkm","areasqkm","totdasqkm","streamorder","local_C_in","runoff_mday","width","depth")
+                      flowline.sub$streamorde,flowline.sub$local_C_in,flowline.sub$vf,flowline.sub$runoff_mday,flowline.sub$width,flowline.sub$depth)
+  names(nodes) <- c("comid","x","y","lengthkm","areasqkm","totdasqkm","streamorder","local_C_in","vf","runoff_mday","width","depth")
   
   links <- flowline.sub[-which(is.na(flowline.sub$tocomid)),c("comid","tocomid")]  # remove network outlet from links (tocomid is empty)
   
@@ -116,7 +118,7 @@ source("./R/Network_MB_Analysis_Functions.R")
   plot(net2,vertex.label=NA,vertex.shape='circle',vertex.size=5,edge.width=1,edge.arrow.size=0.4,edge.color="darkgray")
   
   # Run the mass-balance model:
-  net2.mod <- solveMB(net2)
+  net2.mod <- solveMB(network=net2)
   print(net2.mod$Prop_C_lost)
   
 
